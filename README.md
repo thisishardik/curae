@@ -1,4 +1,4 @@
-# biocom2
+# Curae
 
 A new Flutter application.
 
