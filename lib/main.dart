@@ -1,7 +1,5 @@
 import 'package:amazon_cognito_identity_dart_2/cognito.dart';
-import 'package:amazon_cognito_identity_dart_2/sig_v4.dart';
 import 'package:biocom2/aws_services/user.dart';
-import 'package:biocom2/aws_services/user_service.dart';
 import 'package:biocom2/consult_now/consult_now.dart';
 import 'package:biocom2/doctor_contacts/doctor_contacts.dart';
 import 'package:biocom2/doctor_contacts/floating_button.dart';
@@ -12,6 +10,13 @@ import 'package:biocom2/home_screen/dashboard.dart';
 import 'package:biocom2/home_screen/on_boarding_screen.dart';
 import 'package:biocom2/login_screen/login_screen.dart';
 import 'package:biocom2/meet_my_patients/meet_my_patients.dart';
+import 'package:biocom2/new_adobe_designs/dashboard.dart';
+import 'package:biocom2/new_adobe_designs/my_profile.dart';
+import 'package:biocom2/new_adobe_designs/otp_screen.dart';
+import 'package:biocom2/new_adobe_designs/welcome_screen.dart';
+import 'package:biocom2/new_adobe_designs_patient/all_doctors_page.dart';
+import 'package:biocom2/new_adobe_designs_patient/dashboard_p.dart';
+import 'package:biocom2/new_adobe_designs_patient/welcome_screen_p.dart';
 import 'package:biocom2/new_login_signup/choose_type_page.dart';
 import 'package:biocom2/new_login_signup/doctor_reg_page.dart';
 import 'package:biocom2/new_login_signup/patient_reg_page.dart';
@@ -35,40 +40,20 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _userService = new UserService(userPool);
-  AwsSigV4Client _awsSigV4Client;
-  User _user = new User();
-  bool _isAuthenticated = false;
-
-  Future<UserService> _getValues(BuildContext context) async {
-    try {
-      await _userService.init();
-      _isAuthenticated = await _userService.checkAuthenticated();
-      if (_isAuthenticated) {
-        // get user attributes from cognito
-        _user = await _userService.getCurrentUser();
-
-        // get session credentials
-//        final credentials = await _userService.getCredentials();
-//        _awsSigV4Client = new AwsSigV4Client(
-//            credentials.accessKeyId, credentials.secretAccessKey, _endpoint,
-//            region: _region, sessionToken: credentials.sessionToken);
-      }
-      return _userService;
-    } on CognitoClientException catch (e) {
-      if (e.code == 'NotAuthorizedException') {
-        await _userService.signOut();
-        Navigator.pop(context);
-      }
-      throw e;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-//      initialRoute: DoctorRegPage.id,
+      initialRoute: AdobeDashboard.id,
+      routes: {
+        AdobeWelcomeScreen.id: (context) => AdobeWelcomeScreen(),
+        AdobeDashboard.id: (context) => AdobeDashboard(),
+        AdobeMyProfile.id: (context) => AdobeMyProfile(),
+        AdobeOTPScreen.id: (context) => AdobeOTPScreen(),
+        AdobeWelcomeScreenPatient.id: (context) => AdobeWelcomeScreenPatient(),
+        AdobeAllDoctorsPage.id: (context) => AdobeAllDoctorsPage(),
+        AdobeDashboardPatient.id: (context) => AdobeDashboardPatient(),
+      },
 //      routes: {
 //        // Named Routes
 //        WelcomeAnimation.id: (context) => WelcomeAnimation(),
@@ -99,17 +84,6 @@ class _MyAppState extends State<MyApp> {
 //          }
 //        },
 //      ),
-      home: FutureBuilder(
-          future: _getValues(context),
-          builder: (context, AsyncSnapshot<UserService> snapshot) {
-            if (snapshot.hasData) {
-              if (!_isAuthenticated) {
-                return DoctorRegPage();
-              }
-              return Home();
-            }
-            return ChooseTypePage();
-          }),
     );
   }
 }

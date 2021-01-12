@@ -10,7 +10,6 @@ import 'package:biocom2/emergency/emergency.dart';
 import 'package:biocom2/main.dart';
 import 'package:biocom2/meet_my_patients/meet_my_patients.dart';
 import 'package:biocom2/my_profile/my_profile.dart';
-import 'package:biocom2/new_login_signup/doctor_reg_page.dart';
 import 'package:biocom2/shared_prefs.dart';
 import 'package:biocom2/view_record/view_record.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -42,9 +41,9 @@ final userPool = new CognitoUserPool(
 class Home extends StatefulWidget {
   static String id = 'home';
 
-//  List<CognitoUserAttribute> userAttributes;
-//  CognitoUserSession session;
-//  Home({this.userAttributes, this.session});
+  List<CognitoUserAttribute> userAttributes;
+  CognitoUserSession session;
+  Home({this.userAttributes, this.session});
 
   @override
   HomeState createState() => new HomeState();
@@ -55,37 +54,10 @@ class HomeState extends State<Home> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   User user = User();
   UserService userService = UserService(userPool);
-  bool _isAuthenticated = false;
   String userNameFromAttribute;
   Future<String> userFromSharedPref;
   UserInfoFromSharedPrefs userInfoFromSharedPrefs = UserInfoFromSharedPrefs();
   String usernameFromSharedPrefs;
-
-  Future<UserService> _getValues(BuildContext context) async {
-    try {
-      await userService.init();
-      _isAuthenticated = await userService.checkAuthenticated();
-      if (_isAuthenticated) {
-        // get user attributes from cognito
-        user = await userService.getCurrentUser();
-
-        // get session credentials
-//        final credentials = await _userService.getCredentials();
-//        _awsSigV4Client = new AwsSigV4Client(
-//            credentials.accessKeyId, credentials.secretAccessKey, _endpoint,
-//            region: _region, sessionToken: credentials.sessionToken);
-
-        // get previous count
-      }
-      return userService;
-    } on CognitoClientException catch (e) {
-      if (e.code == 'NotAuthorizedException') {
-        await userService.signOut();
-        Navigator.pop(context);
-      }
-      throw e;
-    }
-  }
 
   /// LOCAL STORAGE BEGINS HERE
 //  final AttributesList list = new AttributesList();
@@ -132,21 +104,24 @@ class HomeState extends State<Home> {
 //          'attribute ${attribute.getName()} has value ${attribute.getValue()}');
 //    });
 //  }
-//  void getUserNameFromAttribute() {
-//    widget.userAttributes.forEach((attribute) {
-//      if (attribute.getName() == 'name') {
-//        userNameFromAttribute = attribute.getValue();
-//      }
-//    });
-//  }
-//  void getUsernameFromSharedPrefs() async {
-//    final SharedPreferences prefs = await userInfoFromSharedPrefs.saveInfo();
-//    usernameFromSharedPrefs = await prefs.getString('username');
-//  }
 
-//  @override
-//  void initState() {
-//    print("${user.name} are the User Attributes");
+  void getUserNameFromAttribute() {
+    widget.userAttributes.forEach((attribute) {
+      if (attribute.getName() == 'name') {
+        userNameFromAttribute = attribute.getValue();
+      }
+    });
+  }
+
+  void getUsernameFromSharedPrefs() async {
+    final SharedPreferences prefs = await userInfoFromSharedPrefs.saveInfo();
+    usernameFromSharedPrefs = await prefs.getString('username');
+  }
+
+  @override
+  void initState() {
+//    userService.getCurrentUser();
+//    print("${widget.userAttributes} are the User Attributes");
 //    getUserNameFromAttribute();
 //    userFromSharedPref =
 //        userInfoFromSharedPrefs.saveInfo().then((SharedPreferences prefs) {
@@ -154,20 +129,13 @@ class HomeState extends State<Home> {
 //    });
 //    print(userFromSharedPref);
 //    getUsernameFromSharedPrefs();
-//    super.initState();
-//  }
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _getValues(context),
-      builder: (context, AsyncSnapshot<UserService> snapshot) {
-        if (snapshot.hasData) {
-          if (!_isAuthenticated) {
-            return DoctorRegPage();
-          }
-          return SafeArea(
-            child: Scaffold(
+    return SafeArea(
+      child: Scaffold(
 //        appBar: AppBar(
 //          primary: true,
 //          elevation: 0,
@@ -225,382 +193,380 @@ class HomeState extends State<Home> {
 ////            ),
 ////          ),
 //        ),
-                key: _scaffoldKey,
-                appBar: GradientAppBar(
-                  elevation: 0.0,
-                  leading: IconButton(
-                    icon: Icon(Icons.menu, color: Colors.white),
-                    onPressed: () => _scaffoldKey.currentState.openDrawer(),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF2a82ba),
+          key: _scaffoldKey,
+          appBar: GradientAppBar(
+            elevation: 0.0,
+            leading: IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              onPressed: () => _scaffoldKey.currentState.openDrawer(),
+            ),
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF2a82ba),
+                Color(0xFF66ccf3),
+              ],
+            ),
+          ),
+          bottomNavigationBar: CustomNavigationBar(
+            iconSize: 27.0,
+            selectedColor: Color(0xff0c18fb),
+            strokeColor: Color(0x300c18fb),
+            unSelectedColor: Colors.grey[600],
+            backgroundColor: Colors.white,
+            items: [
+              CustomNavigationBarItem(
+                icon: Icons.home,
+              ),
+              CustomNavigationBarItem(
+                icon: Icons.location_on,
+              ),
+              CustomNavigationBarItem(
+                icon: Icons.assignment,
+              ),
+              CustomNavigationBarItem(
+                icon: Icons.report_problem,
+              ),
+              CustomNavigationBarItem(
+                icon: CupertinoIcons.person_solid,
+              ),
+            ],
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+                if (_currentIndex == 0) {
+                  print('pressed');
+                }
+                if (_currentIndex == 1) {
+                  Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.fade,
+                        child: DoctorContacts(),
+                      ));
+                }
+                if (_currentIndex == 2) {
+                  Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.fade,
+                        child: MeetMyPatients(),
+                      ));
+                }
+                if (_currentIndex == 3) {
+                  Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.fade,
+                        child: Emergency(),
+                      ));
+                }
+                if (_currentIndex == 4) {
+                  Navigator.push(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.fade,
+                        child: MyProfile(),
+                      ));
+//              Navigator.pushNamed(context, MyProfile.id);
+                }
+              });
+            },
+          ),
+          drawer: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: Drawer(
+              elevation: 20.0,
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
                       Color(0xFF66ccf3),
+                      Color(0xFF2a82ba),
+                    ])),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: <Widget>[
+                    SizedBox(
+                      height: 15.0,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                            icon: Icon(Icons.close,
+                                size: 30.0, color: Colors.white),
+                            onPressed: () => Navigator.pop(context)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 35.0,
+                              ),
+                              child: CircleAvatar(
+                                backgroundImage:
+                                    AssetImage('assets/images/avatar.jpg'),
+                                radius: 47.0,
+                              ),
+                            ),
+                            SizedBox(width: 20.0),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 15.0,
+                                ),
+                                Text(
+                                  'Dr. T Vasanth',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 24.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 3.0,
+                                ),
+                                Text(
+                                  'Oncologist',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 20.0,
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    print('Edit Profile Clicked');
+                                  },
+                                  child: Text(
+                                    'View and Edit Profile',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13.0,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 30.0,
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "Dashboard",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      trailing: Padding(
+                        padding: const EdgeInsets.only(right: 15.0),
+                        child: Container(
+                          height: 15.0,
+                          width: 15.0,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(100.0),
+                          ),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "Services",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "All Appointments",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            PageTransition(
+                                type: PageTransitionType.fade,
+                                child: MeetMyPatients()));
+                      },
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "Doctors",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "Pharmacies",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                    SizedBox(height: 20.0),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30.0, right: 30.0),
+                      child: Container(
+                        height: 3.0,
+                        width: 300.0,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF000046),
+                          borderRadius: BorderRadius.circular(100.0),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 20.0,
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "My Profile",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            PageTransition(
+                                type: PageTransitionType.fade,
+                                child: MyProfile()));
+                      },
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "FAQ",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                    ListTile(
+                      title: Padding(
+                        padding: const EdgeInsets.only(left: 15.0),
+                        child: Text(
+                          "About Us",
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          body: Container(
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF2a82ba),
+                  Color(0xFF66ccf3),
+                ],
+              ),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                Positioned(
+                  top: MediaQuery.of(context).size.height * 0.05,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: Text(
+//                          'Hi $userNameFromAttribute',
+                          'Hi Hardik',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                bottomNavigationBar: CustomNavigationBar(
-                  iconSize: 27.0,
-                  selectedColor: Color(0xff0c18fb),
-                  strokeColor: Color(0x300c18fb),
-                  unSelectedColor: Colors.grey[600],
-                  backgroundColor: Colors.white,
-                  items: [
-                    CustomNavigationBarItem(
-                      icon: Icons.home,
-                    ),
-                    CustomNavigationBarItem(
-                      icon: Icons.location_on,
-                    ),
-                    CustomNavigationBarItem(
-                      icon: Icons.assignment,
-                    ),
-                    CustomNavigationBarItem(
-                      icon: Icons.report_problem,
-                    ),
-                    CustomNavigationBarItem(
-                      icon: CupertinoIcons.person_solid,
-                    ),
-                  ],
-                  currentIndex: _currentIndex,
-                  onTap: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                      if (_currentIndex == 0) {
-                        print('pressed');
-                      }
-                      if (_currentIndex == 1) {
-                        Navigator.push(
-                            context,
-                            PageTransition(
-                              type: PageTransitionType.fade,
-                              child: DoctorContacts(),
-                            ));
-                      }
-                      if (_currentIndex == 2) {
-                        Navigator.push(
-                            context,
-                            PageTransition(
-                              type: PageTransitionType.fade,
-                              child: MeetMyPatients(),
-                            ));
-                      }
-                      if (_currentIndex == 3) {
-                        Navigator.push(
-                            context,
-                            PageTransition(
-                              type: PageTransitionType.fade,
-                              child: Emergency(),
-                            ));
-                      }
-                      if (_currentIndex == 4) {
-                        Navigator.push(
-                            context,
-                            PageTransition(
-                              type: PageTransitionType.fade,
-                              child: MyProfile(),
-                            ));
-//              Navigator.pushNamed(context, MyProfile.id);
-                      }
-                    });
-                  },
-                ),
-                drawer: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: Drawer(
-                    elevation: 20.0,
-                    child: Container(
-                      height: MediaQuery.of(context).size.height,
-                      decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                            Color(0xFF66ccf3),
-                            Color(0xFF2a82ba),
-                          ])),
-                      child: ListView(
-                        padding: EdgeInsets.zero,
-                        children: <Widget>[
-                          SizedBox(
-                            height: 15.0,
+                DraggableScrollableSheet(
+                  builder: (BuildContext context,
+                      ScrollController scrollController) {
+                    return Stack(
+                      overflow: Overflow.visible,
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(40),
+                                topLeft: Radius.circular(40)),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                  icon: Icon(Icons.close,
-                                      size: 30.0, color: Colors.white),
-                                  onPressed: () => Navigator.pop(context)),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 35.0,
-                                    ),
-                                    child: CircleAvatar(
-                                      backgroundImage: AssetImage(
-                                          'assets/images/avatar.jpg'),
-                                      radius: 47.0,
-                                    ),
-                                  ),
-                                  SizedBox(width: 20.0),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        height: 15.0,
-                                      ),
-                                      Text(
-                                        'Dr. T Vasanth',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 24.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 3.0,
-                                      ),
-                                      Text(
-                                        'Oncologist',
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 18.0,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 20.0,
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          print('Edit Profile Clicked');
-                                        },
-                                        child: Text(
-                                          'View and Edit Profile',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13.0,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 30.0,
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "Dashboard",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            trailing: Padding(
-                              padding: const EdgeInsets.only(right: 15.0),
-                              child: Container(
-                                height: 15.0,
-                                width: 15.0,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(100.0),
-                                ),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "Services",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "All Appointments",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  PageTransition(
-                                      type: PageTransitionType.fade,
-                                      child: MeetMyPatients()));
-                            },
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "Doctors",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "Pharmacies",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                          SizedBox(height: 20.0),
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(left: 30.0, right: 30.0),
-                            child: Container(
-                              height: 3.0,
-                              width: 300.0,
-                              decoration: BoxDecoration(
-                                color: Color(0xFF000046),
-                                borderRadius: BorderRadius.circular(100.0),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20.0,
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "My Profile",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  PageTransition(
-                                      type: PageTransitionType.fade,
-                                      child: MyProfile()));
-                            },
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "FAQ",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                          ListTile(
-                            title: Padding(
-                              padding: const EdgeInsets.only(left: 15.0),
-                              child: Text(
-                                "About Us",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 19.0,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                            onTap: () {},
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                body: Container(
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF2a82ba),
-                        Color(0xFF66ccf3),
-                      ],
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Positioned(
-                        top: MediaQuery.of(context).size.height * 0.05,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Center(
-                              child: Text(
-//                          'Hi $userNameFromAttribute',
-                                '${user.name}',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      DraggableScrollableSheet(
-                        builder: (BuildContext context,
-                            ScrollController scrollController) {
-                          return Stack(
-                            overflow: Overflow.visible,
-                            children: <Widget>[
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.only(
-                                      topRight: Radius.circular(40),
-                                      topLeft: Radius.circular(40)),
-                                ),
-                                child: ListView(
+                          child: ListView(
 //                      physics: BouncingScrollPhysics(),
-                                  controller: scrollController,
-                                  children: [
-                                    SizedBox(
-                                      height: 25.0,
-                                    ),
+                            controller: scrollController,
+                            children: [
+                              SizedBox(
+                                height: 25.0,
+                              ),
 //                        LineGraph(
 //                          features: features,
 //                          size: Size(500, 200),
@@ -612,438 +578,380 @@ class HomeState extends State<Home> {
 //                        SizedBox(
 //                          height: 25.0,
 //                        ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Upcoming Appointments',
-                                          style: TextStyle(
-                                              fontSize: 22.0,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 140.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              50.0),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Aditya Mangla',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 140.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              50.0),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Aditya Mangla',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 140.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              50.0),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Aditya Mangla',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 140.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              50.0),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Aditya Mangla',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 25.0,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Recent News in Oncology',
-                                          style: TextStyle(
-                                              fontSize: 22.0,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 120.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                        bottomLeft:
-                                                            Radius.circular(
-                                                                15.0),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                                15.0),
-                                                      ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Headline',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 120.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                        bottomLeft:
-                                                            Radius.circular(
-                                                                15.0),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                                15.0),
-                                                      ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Headline',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 120.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                        bottomLeft:
-                                                            Radius.circular(
-                                                                15.0),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                                15.0),
-                                                      ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Headline',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 35.0,
-                                                right: 35.0,
-                                                top: 20.0),
-                                            child: Container(
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'assets/images/sample-profile-male.png',
-                                                    width: 120.0,
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                  Container(
-                                                    height: 50.0,
-                                                    width: 120.0,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(0xFF3a96ca),
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                        bottomLeft:
-                                                            Radius.circular(
-                                                                15.0),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                                15.0),
-                                                      ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: Center(
-                                                        child: Text(
-                                                          'Headline',
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 17.0),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Upcoming Appointments',
+                                    style: TextStyle(
+                                        fontSize: 22.0,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
                               ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 140.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius:
+                                                    BorderRadius.circular(50.0),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Aditya Mangla',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 140.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius:
+                                                    BorderRadius.circular(50.0),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Aditya Mangla',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 140.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius:
+                                                    BorderRadius.circular(50.0),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Aditya Mangla',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 140.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius:
+                                                    BorderRadius.circular(50.0),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Aditya Mangla',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: 25.0,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Recent News in Oncology',
+                                    style: TextStyle(
+                                        fontSize: 22.0,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 120.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(15.0),
+                                                  bottomRight:
+                                                      Radius.circular(15.0),
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Headline',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 120.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(15.0),
+                                                  bottomRight:
+                                                      Radius.circular(15.0),
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Headline',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 120.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(15.0),
+                                                  bottomRight:
+                                                      Radius.circular(15.0),
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Headline',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 35.0, right: 35.0, top: 20.0),
+                                      child: Container(
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/sample-profile-male.png',
+                                              width: 120.0,
+                                              fit: BoxFit.fill,
+                                            ),
+                                            Container(
+                                              height: 50.0,
+                                              width: 120.0,
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFF3a96ca),
+                                                borderRadius: BorderRadius.only(
+                                                  bottomLeft:
+                                                      Radius.circular(15.0),
+                                                  bottomRight:
+                                                      Radius.circular(15.0),
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    'Headline',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 17.0),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
 //                  Positioned(
 //                    child: FloatingActionButton(
 //                      child: Icon(
@@ -1055,21 +963,13 @@ class HomeState extends State<Home> {
 //                    top: -30,
 //                    right: 30,
 //                  )
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                )),
-          );
-        }
-        return Scaffold(
-          appBar: AppBar(
-            leading: Text('Loading App'),
-          ),
-        );
-      },
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          )),
     );
   }
 }

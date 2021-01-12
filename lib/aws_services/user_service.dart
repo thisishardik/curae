@@ -12,10 +12,10 @@ final userPool = new CognitoUserPool(
 );
 
 class UserService {
-  UserService(this._userPool);
   CognitoUserPool _userPool;
   CognitoUser _cognitoUser;
   CognitoUserSession _session;
+  UserService(this._userPool);
   CognitoCredentials credentials;
 
   /// Initiate user session from local storage if present
@@ -51,74 +51,15 @@ class UserService {
     return user;
   }
 
-  /// Login user
-  Future<User> login(String username, String password) async {
-    _cognitoUser = new CognitoUser(username, userPool);
-
-    final authDetails = new AuthenticationDetails(
-      username: '$username',
-      password: '$password',
-    );
-
-    bool isConfirmed;
-    try {
-      _session = await _cognitoUser.authenticateUser(authDetails);
-      isConfirmed = true;
-    } on CognitoUserNewPasswordRequiredException catch (e) {
-      print(e);
-    } on CognitoUserMfaRequiredException catch (e) {
-      print(e);
-      // handle SMS_MFA challenge
-    } on CognitoUserSelectMfaTypeException catch (e) {
-      print(e);
-      // handle SELECT_MFA_TYPE challenge
-    } on CognitoUserMfaSetupException catch (e) {
-      print(e);
-      // handle MFA_SETUP challenge
-    } on CognitoUserTotpRequiredException catch (e) {
-      print(e);
-      // handle SOFTWARE_TOKEN_MFA challenge
-    } on CognitoUserCustomChallengeException catch (e) {
-      print(e);
-      // handle CUSTOM_CHALLENGE challenge
-    } on CognitoUserConfirmationNecessaryException catch (e) {
-      print(e);
-      // handle User Confirmation Necessary
-    } on CognitoClientException catch (e) {
-      print(e);
-      isConfirmed = false;
-      // handle Wrong Username and Password and Cognito Client
-    } catch (e) {
-      print(e);
-    }
-    print(_session.getAccessToken().getJwtToken());
-
-    if (!_session.isValid()) {
-      return null;
-    }
-
-    final attributes = await _cognitoUser.getUserAttributes();
-    final user = new User.fromUserAttributes(attributes);
-    user.confirmed = isConfirmed;
-    user.hasAccess = true;
-
-    return user;
-  }
-
-  /// Confirm user's account with confirmation code sent to email
-  Future<bool> confirmAccount(String email, String confirmationCode) async {
-    _cognitoUser =
-        new CognitoUser(email, _userPool, storage: _userPool.storage);
-
-    return await _cognitoUser.confirmRegistration(confirmationCode);
-  }
-
-  /// Resend confirmation code to user's email
-  Future<void> resendConfirmationCode(String email) async {
-    _cognitoUser =
-        new CognitoUser(email, _userPool, storage: _userPool.storage);
-    await _cognitoUser.resendConfirmationCode();
-  }
+//  /// Retrieve user credentials -- for use with other AWS services
+//  Future<CognitoCredentials> getCredentials() async {
+//    if (_cognitoUser == null || _session == null) {
+//      return null;
+//    }
+//    credentials = CognitoCredentials(_identityPoolId, _userPool);
+//    await credentials.getAwsCredentials(_session.getIdToken().getJwtToken());
+//    return credentials;
+//  }
 
   /// Check if user's current session is valid
   Future<bool> checkAuthenticated() async {
@@ -126,30 +67,6 @@ class UserService {
       return false;
     }
     return _session.isValid();
-  }
-
-  /// Sign up new user
-  Future<User> signUp(String username, String email, String password,
-      String number, String gender, String aadharNumber, String address) async {
-    CognitoUserPoolData data;
-    final userAttributes = [
-      AttributeArg(name: 'name', value: '$username'),
-      AttributeArg(name: 'email', value: '$email'),
-      AttributeArg(name: 'phone_number', value: '+91$number'),
-      AttributeArg(name: 'address', value: '$address'),
-      AttributeArg(name: 'gender', value: '$gender')
-    ];
-    data = await userPool.signUp(
-      '$username',
-      '$password',
-      userAttributes: userAttributes,
-    );
-
-    final user = new User();
-    user.email = email;
-    user.name = username;
-    user.confirmed = data.userConfirmed;
-    return user;
   }
 
   Future<void> signOut() async {

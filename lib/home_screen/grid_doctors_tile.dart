@@ -1,4 +1,6 @@
+import 'package:biocom2/new_adobe_designs_patient/all_doctors_page.dart';
 import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 
 class GridDoctorsTile extends StatelessWidget {
   final String title;
@@ -12,7 +14,7 @@ class GridDoctorsTile extends StatelessWidget {
       width: 153.0,
       height: 150.0,
       child: Card(
-        elevation: 2.0,
+        elevation: 5.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
         ),
@@ -26,7 +28,7 @@ class GridDoctorsTile extends StatelessWidget {
               ),
             ),
             ListTile(
-              // ToDo onTap
+              onTap: onPressed,
               title: Text(
                 title,
                 textAlign: TextAlign.center,
